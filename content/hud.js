@@ -1,7 +1,143 @@
 /**
- * XHit - In-Page Floating HUD Dock
- * Injects a modern, non-intrusive floating control widget directly on X (Twitter).
+ * XHit - In-Page Floating HUD Dock & Audio/FX Engine
+ * Premium glassmorphic interface, dynamic island minimized mode, live tweet spotlight,
+ * instant speed switcher, audio synthesis, and celebration confetti.
  */
+
+// Web Audio API Sound Synthesizer (Zero external dependencies)
+class XHitAudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playPop() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.05);
+
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.05);
+    } catch (e) {}
+  }
+
+  playChime() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const time = this.ctx.currentTime + idx * 0.1;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, time);
+
+        gain.gain.setValueAtTime(0.1, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(time);
+        osc.stop(time + 0.25);
+      });
+    } catch (e) {}
+  }
+}
+
+// Particle Confetti Burst
+function launchXHitConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '2147483646';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#ef4444', '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#ffffff'];
+
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: window.innerWidth / 2,
+      y: window.innerHeight * 0.65,
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.9) * 18,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1,
+      rotation: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 12
+    });
+  }
+
+  let animationFrame;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = 0;
+
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.45; // gravity
+      p.alpha -= 0.012;
+      p.rotation += p.vRot;
+
+      if (p.alpha > 0) {
+        alive++;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      }
+    });
+
+    if (alive > 0) {
+      animationFrame = requestAnimationFrame(animate);
+    } else {
+      canvas.remove();
+      cancelAnimationFrame(animationFrame);
+    }
+  }
+  animate();
+}
 
 class XHitHUD {
   constructor(engine) {
@@ -9,6 +145,7 @@ class XHitHUD {
     this.root = null;
     this.card = null;
     this.isMinimized = false;
+    this.audio = new XHitAudioEngine();
     this.init();
   }
 
@@ -36,7 +173,15 @@ class XHitHUD {
             <div class="xhit-logo-icon">✕</div>
             <div class="xhit-title">X<span>Hit</span></div>
           </div>
+
+          <!-- Dynamic Island Mini Capsule View -->
+          <div class="xhit-mini-pill" id="xhit-mini-pill">
+            <span class="xhit-mini-count" id="xhit-mini-count">0 Wiped</span>
+            <span id="xhit-mini-status">Ready</span>
+          </div>
+
           <div class="xhit-header-actions">
+            <button class="xhit-icon-btn" id="xhit-btn-audio" title="Toggle Sound FX">🔊</button>
             <button class="xhit-icon-btn" id="xhit-btn-minimize" title="Minimize / Expand">_</button>
             <button class="xhit-icon-btn" id="xhit-btn-close" title="Hide HUD">×</button>
           </div>
@@ -73,6 +218,22 @@ class XHitHUD {
             </div>
           </div>
 
+          <!-- Live Tweet Spotlight -->
+          <div class="xhit-spotlight" id="xhit-spotlight">
+            <div class="xhit-spotlight-header">
+              <span>Target Spotlight</span>
+              <span id="xhit-spotlight-category" style="color: #ef4444;">Standby</span>
+            </div>
+            <div class="xhit-spotlight-text" id="xhit-spotlight-text">Ready to wipe timeline items.</div>
+          </div>
+
+          <!-- Speed Pills Switcher directly in HUD -->
+          <div class="xhit-speed-pills">
+            <button class="xhit-speed-pill" data-speed="safe" title="Safe Mode: ~1.8s delay with jitter">Safe</button>
+            <button class="xhit-speed-pill active" data-speed="balanced" title="Balanced Mode: ~0.8s delay">Balanced</button>
+            <button class="xhit-speed-pill" data-speed="turbo" title="Turbo Mode: ~0.4s delay">Turbo</button>
+          </div>
+
           <!-- Controls -->
           <div class="xhit-controls">
             <button class="xhit-btn xhit-btn-primary" id="xhit-action-btn">
@@ -102,6 +263,9 @@ class XHitHUD {
             <input type="checkbox" id="xhit-chk-alltabs" checked>
             <span>All Tabs</span>
           </label>
+          <div class="xhit-dock-actions">
+            <button class="xhit-icon-btn" id="xhit-btn-snap" title="Snap to opposite corner">⇄</button>
+          </div>
         </div>
       </div>
     `;
@@ -110,27 +274,60 @@ class XHitHUD {
   bindEvents() {
     const minBtn = this.root.querySelector('#xhit-btn-minimize');
     const closeBtn = this.root.querySelector('#xhit-btn-close');
+    const audioBtn = this.root.querySelector('#xhit-btn-audio');
+    const snapBtn = this.root.querySelector('#xhit-btn-snap');
+    const miniPill = this.root.querySelector('#xhit-mini-pill');
+
     const actionBtn = this.root.querySelector('#xhit-action-btn');
     const pauseBtn = this.root.querySelector('#xhit-pause-btn');
     const stopBtn = this.root.querySelector('#xhit-stop-btn');
     const dryRunChk = this.root.querySelector('#xhit-chk-dryrun');
     const allTabsChk = this.root.querySelector('#xhit-chk-alltabs');
     const dragHandle = this.root.querySelector('#xhit-drag-handle');
+    const speedPills = this.root.querySelectorAll('.xhit-speed-pill');
 
     // Minimize toggle
-    minBtn.addEventListener('click', () => {
+    const toggleMinimize = () => {
       this.isMinimized = !this.isMinimized;
       this.card.classList.toggle('xhit-minimized', this.isMinimized);
       minBtn.textContent = this.isMinimized ? '□' : '_';
+    };
+
+    minBtn.addEventListener('click', toggleMinimize);
+    miniPill.addEventListener('click', toggleMinimize);
+
+    // Audio toggle
+    audioBtn.addEventListener('click', () => {
+      this.audio.enabled = !this.audio.enabled;
+      audioBtn.textContent = this.audio.enabled ? '🔊' : '🔇';
+      if (this.audio.enabled) {
+        this.audio.playPop();
+      }
     });
 
-    // Close HUD (can be re-opened from extension popup)
+    // Snap dock to left/right corner
+    let isSnappedLeft = false;
+    snapBtn.addEventListener('click', () => {
+      isSnappedLeft = !isSnappedLeft;
+      this.root.style.top = 'auto';
+      this.root.style.bottom = '24px';
+      if (isSnappedLeft) {
+        this.root.style.right = 'auto';
+        this.root.style.left = '24px';
+      } else {
+        this.root.style.left = 'auto';
+        this.root.style.right = '24px';
+      }
+    });
+
+    // Close HUD
     closeBtn.addEventListener('click', () => {
       this.root.style.display = 'none';
     });
 
-    // Action button (Start Wipe)
+    // Start
     actionBtn.addEventListener('click', () => {
+      this.audio.init();
       if (!this.engine.isRunning) {
         this.engine.start();
       }
@@ -150,7 +347,19 @@ class XHitHUD {
       this.engine.stop();
     });
 
-    // Options checkboxes
+    // Speed Pill Selection
+    speedPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        speedPills.forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        const speed = pill.getAttribute('data-speed');
+        this.engine.setOptions({ speed });
+        this.log(`Speed mode set to ${speed.toUpperCase()}`);
+        this.audio.playPop();
+      });
+    });
+
+    // Checkboxes
     dryRunChk.addEventListener('change', (e) => {
       this.engine.setOptions({ dryRun: e.target.checked });
       this.log(`Dry-run mode ${e.target.checked ? 'enabled' : 'disabled'}`);
@@ -187,9 +396,15 @@ class XHitHUD {
     const repliesEl = this.root.querySelector('#xhit-stat-replies');
     const otherEl = this.root.querySelector('#xhit-stat-other');
 
+    const miniCount = this.root.querySelector('#xhit-mini-count');
+    const miniStatus = this.root.querySelector('#xhit-mini-status');
+
     const actionBtn = this.root.querySelector('#xhit-action-btn');
     const pauseBtn = this.root.querySelector('#xhit-pause-btn');
     const stopBtn = this.root.querySelector('#xhit-stop-btn');
+
+    const spotlightCategory = this.root.querySelector('#xhit-spotlight-category');
+    const spotlightText = this.root.querySelector('#xhit-spotlight-text');
 
     // Update username
     if (data.currentUser) {
@@ -198,10 +413,12 @@ class XHitHUD {
 
     // Update stats
     if (data.stats) {
-      totalEl.textContent = data.stats.total || 0;
+      const tot = data.stats.total || 0;
+      totalEl.textContent = tot;
       postsEl.textContent = data.stats.posts || 0;
       repliesEl.textContent = data.stats.replies || 0;
       otherEl.textContent = (data.stats.reposts || 0) + (data.stats.likes || 0);
+      miniCount.textContent = `${tot} Wiped`;
     }
 
     // Update Buttons & Status Badge
@@ -213,10 +430,12 @@ class XHitHUD {
       if (data.isPaused) {
         statusBadge.className = 'xhit-badge xhit-badge-paused';
         statusText.textContent = 'Paused';
+        miniStatus.textContent = 'Paused';
         pauseBtn.textContent = '▶ Resume';
       } else {
         statusBadge.className = 'xhit-badge xhit-badge-running';
         statusText.textContent = 'Wiping...';
+        miniStatus.textContent = 'Wiping...';
         pauseBtn.textContent = '⏸ Pause';
       }
     } else {
@@ -225,12 +444,28 @@ class XHitHUD {
       stopBtn.style.display = 'none';
       statusBadge.className = 'xhit-badge xhit-badge-idle';
       statusText.textContent = 'Ready';
+      miniStatus.textContent = 'Ready';
     }
 
-    // Handle specific event logs
+    // Handle specific event logs & effects
     if (event === 'item_deleted') {
       const prefix = data.options?.dryRun ? '[DRY RUN] Would delete' : 'Deleted';
       this.log(`${prefix} ${data.type || 'Item'}`);
+      this.audio.playPop();
+
+      if (spotlightCategory && data.type) {
+        spotlightCategory.textContent = data.type;
+      }
+      if (spotlightText && data.snippet) {
+        spotlightText.textContent = `"${data.snippet}"`;
+      }
+    } else if (event === 'item_target') {
+      if (spotlightCategory && data.type) {
+        spotlightCategory.textContent = `Wiping ${data.type}...`;
+      }
+      if (spotlightText && data.snippet) {
+        spotlightText.textContent = `"${data.snippet}"`;
+      }
     } else if (event === 'cooldown') {
       this.log(`Rate limit cooldown: ${data.secondsLeft}s left`, 'warning');
     } else if (event === 'transition') {
@@ -238,6 +473,9 @@ class XHitHUD {
     } else if (event === 'completed') {
       this.log('✨ All targets wiped clean!', 'active');
       statusText.textContent = 'Completed!';
+      miniStatus.textContent = 'Clean!';
+      this.audio.playChime();
+      launchXHitConfetti();
     } else if (event === 'scrolling') {
       this.log(`Scanning older posts (scroll #${data.attempt})...`);
     } else if (event === 'toast_warning') {
@@ -277,7 +515,6 @@ class XHitHUD {
       initialX = rect.left;
       initialY = rect.top;
 
-      // Switch positioning to top/left on drag
       this.root.style.bottom = 'auto';
       this.root.style.right = 'auto';
       this.root.style.left = `${initialX}px`;
@@ -295,8 +532,7 @@ class XHitHUD {
       let newX = initialX + dx;
       let newY = initialY + dy;
 
-      // Keep within bounds
-      newX = Math.max(10, Math.min(window.innerWidth - 340, newX));
+      newX = Math.max(10, Math.min(window.innerWidth - (this.isMinimized ? 180 : 340), newX));
       newY = Math.max(10, Math.min(window.innerHeight - 80, newY));
 
       this.root.style.left = `${newX}px`;

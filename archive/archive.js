@@ -1,6 +1,6 @@
 /**
  * XHit - Archive Deep Wiper Logic
- * Parses tweets.js archive and orchestrates batch deletion
+ * Filter chips, dynamic sorting, CSV & JSON exporter, and batch deletion
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,10 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateNewest = document.getElementById('date-newest');
   const countQueue = document.getElementById('count-queue');
 
-  const filterDate = document.getElementById('filter-date');
+  const filterChips = document.querySelectorAll('.filter-chip');
   const filterKeyword = document.getElementById('filter-keyword');
+  const selectSort = document.getElementById('select-sort');
   const btnStartWipe = document.getElementById('btn-start-archive-wipe');
-  const btnExportBackup = document.getElementById('btn-export-backup');
+  const btnExportJson = document.getElementById('btn-export-json');
+  const btnExportCsv = document.getElementById('btn-export-csv');
 
   const progressContainer = document.getElementById('progress-container');
   const progressFill = document.getElementById('progress-fill');
@@ -25,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let allTweets = [];
   let filteredTweets = [];
+  let activeFilterType = 'all';
   let isWiping = false;
 
   // Dropzone interactions
@@ -79,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             retweets: parseInt(t.retweet_count || 0, 10),
             status: 'pending' // pending | deleted | skipped
           };
-        }).sort((a, b) => b.date - a.date);
+        });
 
         applyFilters();
         showResults();
@@ -91,31 +94,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyFilters() {
-    const dateVal = filterDate.value;
     const keyword = filterKeyword.value.trim().toLowerCase();
     const now = new Date();
 
     filteredTweets = allTweets.filter((t) => {
-      // Keyword match
       if (keyword && !t.text.toLowerCase().includes(keyword)) {
         return false;
       }
 
-      // Date match
-      if (dateVal === '1year') {
+      if (activeFilterType === '1year') {
         const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
         return t.date < oneYearAgo;
       }
-      if (dateVal === '6months') {
-        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-        return t.date < sixMonthsAgo;
+      if (activeFilterType === '2years') {
+        const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        return t.date < twoYearsAgo;
+      }
+      if (activeFilterType === 'zerolikes') {
+        return t.likes === 0;
       }
 
       return true;
     });
 
+    applySorting();
     updateStats();
     renderTable();
+  }
+
+  function applySorting() {
+    const sortVal = selectSort.value;
+    filteredTweets.sort((a, b) => {
+      if (sortVal === 'date-desc') return b.date - a.date;
+      if (sortVal === 'date-asc') return a.date - b.date;
+      if (sortVal === 'likes-desc') return b.likes - a.likes;
+      if (sortVal === 'likes-asc') return a.likes - b.likes;
+      return 0;
+    });
   }
 
   function updateStats() {
@@ -123,25 +138,28 @@ document.addEventListener('DOMContentLoaded', () => {
     countQueue.textContent = filteredTweets.length;
 
     if (allTweets.length > 0) {
-      const oldest = allTweets[allTweets.length - 1].date;
-      const newest = allTweets[0].date;
-      dateOldest.textContent = oldest.toLocaleDateString();
-      dateNewest.textContent = newest.toLocaleDateString();
+      const sortedByDate = [...allTweets].sort((a, b) => a.date - b.date);
+      dateOldest.textContent = sortedByDate[0].date.toLocaleDateString();
+      dateNewest.textContent = sortedByDate[sortedByDate.length - 1].date.toLocaleDateString();
     }
   }
 
   function renderTable() {
     tweetsTbody.innerHTML = '';
-    const slice = filteredTweets.slice(0, 100); // render first 100 preview
+    const slice = filteredTweets.slice(0, 100);
 
     slice.forEach((t) => {
       const tr = document.createElement('tr');
       tr.id = `tweet-row-${t.id}`;
       tr.innerHTML = `
-        <td>${t.date.toLocaleDateString()}</td>
-        <td><a href="https://x.com/i/status/${t.id}" target="_blank" style="color: #93c5fd; text-decoration: none;">${escapeHtml(t.text.slice(0, 80))}${t.text.length > 80 ? '...' : ''}</a></td>
-        <td>${t.likes}</td>
-        <td>${t.retweets}</td>
+        <td style="color: #9ca3af; font-family: ui-monospace, monospace; font-size: 12px;">${t.date.toLocaleDateString()}</td>
+        <td>
+          <a href="https://x.com/i/status/${t.id}" target="_blank" style="color: #60a5fa; text-decoration: none; font-weight: 500;">
+            ${escapeHtml(t.text.slice(0, 85))}${t.text.length > 85 ? '...' : ''}
+          </a>
+        </td>
+        <td style="font-weight: 700; color: #f472b6;">♥ ${t.likes}</td>
+        <td style="font-weight: 700; color: #34d399;">↻ ${t.retweets}</td>
         <td><span class="status-badge ${t.status}">${t.status}</span></td>
       `;
       tweetsTbody.appendChild(tr);
@@ -153,20 +171,51 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsSection.style.display = 'flex';
   }
 
-  // Filter change listeners
-  filterDate.addEventListener('change', applyFilters);
+  // Filter Chip clicks
+  filterChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilterType = chip.getAttribute('data-filter');
+      applyFilters();
+    });
+  });
+
   filterKeyword.addEventListener('input', applyFilters);
+  selectSort.addEventListener('change', () => {
+    applySorting();
+    renderTable();
+  });
 
   // Export JSON Backup
-  btnExportBackup.addEventListener('click', () => {
+  btnExportJson.addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(allTweets, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, `xhit-tweets-backup-${getISODate()}.json`);
+  });
+
+  // Export CSV Backup
+  btnExportCsv.addEventListener('click', () => {
+    let csv = 'ID,Date,Likes,Retweets,Text\n';
+    allTweets.forEach((t) => {
+      const escapedText = `"${t.text.replace(/"/g, '""')}"`;
+      csv += `${t.id},"${t.date.toISOString()}",${t.likes},${t.retweets},${escapedText}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `xhit-tweets-backup-${getISODate()}.csv`);
+  });
+
+  function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `xhit-tweets-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  });
+  }
+
+  function getISODate() {
+    return new Date().toISOString().slice(0, 10);
+  }
 
   // Batch Wipe Process
   btnStartWipe.addEventListener('click', async () => {
@@ -176,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const confirmed = confirm(`Are you sure you want to wipe ${filteredTweets.length} tweets from your Twitter archive? This cannot be undone.`);
+    const confirmed = confirm(`Are you sure you want to wipe ${filteredTweets.length} tweets from your Twitter archive? This action is permanent.`);
     if (!confirmed) return;
 
     isWiping = true;
@@ -193,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
       progressStatus.textContent = `Processing tweet ${processed + 1} of ${total} (ID: ${t.id})...`;
       progressFill.style.width = `${Math.round(((processed + 1) / total) * 100)}%`;
 
-      // Simulating / executing deletion request
       t.status = 'deleted';
       const rowBadge = document.querySelector(`#tweet-row-${t.id} .status-badge`);
       if (rowBadge) {

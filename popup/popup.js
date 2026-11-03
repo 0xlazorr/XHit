@@ -1,16 +1,16 @@
 /**
- * XHit - Popup UI Controller
- * Handles user controls, target toggles, real-time status, and tab communication
+ * XHit - Enhanced Popup UI Controller
+ * Interactive presets, segmented speed selector, audio FX toggle, and real-time synchronization
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // DOM Elements
+  // Header & Context
   const headerStatus = document.getElementById('header-status');
   const statusLabel = document.getElementById('status-label');
-  const contextCard = document.getElementById('context-card');
-  const contextIcon = document.getElementById('context-icon');
+  const btnAudioToggle = document.getElementById('btn-audio-toggle');
   const contextTitle = document.getElementById('context-title');
   const contextSubtitle = document.getElementById('context-subtitle');
+  const userAvatarBadge = document.getElementById('user-avatar-badge');
   const btnOpenX = document.getElementById('btn-open-x');
 
   // Stats
@@ -19,7 +19,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statReplies = document.getElementById('stat-replies');
   const statOther = document.getElementById('stat-other');
 
-  // Checkboxes & Settings
+  // Presets
+  const presetAll = document.getElementById('preset-all');
+  const presetReplies = document.getElementById('preset-replies');
+  const presetSocial = document.getElementById('preset-social');
+  const presetPills = [presetAll, presetReplies, presetSocial];
+
+  // Checkboxes
   const btnSelectAll = document.getElementById('btn-select-all');
   const chkPosts = document.getElementById('chk-posts');
   const chkReplies = document.getElementById('chk-replies');
@@ -27,16 +33,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chkLikes = document.getElementById('chk-likes');
   const chkAllTabs = document.getElementById('chk-all-tabs');
   const chkDryRun = document.getElementById('chk-dry-run');
-  const selectSpeed = document.getElementById('select-speed');
 
-  // Action buttons
+  // Speed Segmented Buttons
+  const speedButtons = document.querySelectorAll('.speed-segment-btn');
+  let currentSpeed = 'balanced';
+
+  // Action Buttons
   const btnMainAction = document.getElementById('btn-main-action');
-  const btnMainText = document.getElementById('btn-main-text');
   const runningControls = document.getElementById('running-controls');
   const btnPause = document.getElementById('btn-pause');
   const btnStop = document.getElementById('btn-stop');
 
-  // Footer links
+  // Footer Links
   const linkShowHud = document.getElementById('link-show-hud');
   const linkArchiveWiper = document.getElementById('link-archive-wiper');
 
@@ -44,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isTwitterTab = false;
   let currentUser = null;
   let currentState = null;
+  let audioEnabled = true;
 
   // 1. Detect Active Tab
   try {
@@ -57,9 +66,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Error querying tab:', err);
   }
 
-  // 2. Update Context Card
+  // 2. Context Presentation
   if (!isTwitterTab) {
-    contextIcon.textContent = '⚠️';
+    userAvatarBadge.textContent = '!';
+    userAvatarBadge.style.borderColor = '#ef4444';
     contextTitle.textContent = 'Not on X / Twitter';
     contextSubtitle.textContent = 'Navigate to x.com to use XHit';
     btnOpenX.style.display = 'block';
@@ -67,23 +77,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnMainAction.style.opacity = '0.5';
     btnMainAction.style.cursor = 'not-allowed';
   } else {
-    // Ping content script to verify connection
     pingContentScript();
   }
 
-  // Helper: Ping content script
   function pingContentScript() {
     if (!activeTab) return;
     chrome.tabs.sendMessage(activeTab.id, { action: 'CHECK_READY' }, (response) => {
       if (chrome.runtime.lastError || !response) {
-        contextIcon.textContent = '⏳';
         contextTitle.textContent = 'Connecting to X...';
         contextSubtitle.textContent = 'Please refresh x.com tab if stuck';
       } else {
         currentUser = response.currentUser;
-        contextIcon.textContent = '✓';
-        contextTitle.textContent = currentUser ? `@${currentUser}` : 'Connected to X.com';
-        contextSubtitle.textContent = 'Ready to clean';
+        if (currentUser) {
+          contextTitle.textContent = `@${currentUser}`;
+          userAvatarBadge.textContent = currentUser.charAt(0).toUpperCase();
+        } else {
+          contextTitle.textContent = 'Connected to X.com';
+          userAvatarBadge.textContent = '✓';
+        }
+        contextSubtitle.textContent = 'Active & Ready';
         if (response.snapshot) {
           syncUIWithSnapshot(response.snapshot);
         }
@@ -91,18 +103,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Helper: Sync UI with engine snapshot
   function syncUIWithSnapshot(snapshot) {
     currentState = snapshot;
-    const { isRunning, isPaused, stats, options } = snapshot;
+    const { isRunning, isPaused, stats } = snapshot;
 
-    // Update stats
     statTotal.textContent = stats.total || 0;
     statPosts.textContent = stats.posts || 0;
     statReplies.textContent = stats.replies || 0;
     statOther.textContent = (stats.reposts || 0) + (stats.likes || 0);
 
-    // Update running controls
     if (isRunning) {
       headerStatus.classList.add('running');
       statusLabel.textContent = isPaused ? 'Paused' : 'Wiping...';
@@ -117,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Load saved settings from chrome.storage
+  // Load saved settings
   chrome.storage.local.get(['xhit_settings', 'xhit_state'], (result) => {
     if (result.xhit_settings) {
       const s = result.xhit_settings;
@@ -127,14 +136,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       chkLikes.checked = s.deleteLikes ?? true;
       chkAllTabs.checked = s.wipeAllTabs ?? true;
       chkDryRun.checked = s.dryRun ?? false;
-      selectSpeed.value = s.speed || 'balanced';
+      currentSpeed = s.speed || 'balanced';
+      updateSpeedButtonsUI(currentSpeed);
+      if (s.audioEnabled !== undefined) {
+        audioEnabled = s.audioEnabled;
+        btnAudioToggle.textContent = audioEnabled ? '🔊' : '🔇';
+      }
     }
     if (result.xhit_state) {
       syncUIWithSnapshot(result.xhit_state);
     }
   });
 
-  // Save settings helper
   function saveCurrentSettings() {
     const settings = {
       deletePosts: chkPosts.checked,
@@ -143,7 +156,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       deleteLikes: chkLikes.checked,
       wipeAllTabs: chkAllTabs.checked,
       dryRun: chkDryRun.checked,
-      speed: selectSpeed.value
+      speed: currentSpeed,
+      audioEnabled
     };
     chrome.storage.local.set({ xhit_settings: settings });
     if (isTwitterTab && activeTab) {
@@ -152,36 +166,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     return settings;
   }
 
-  // Bind change listeners
-  [chkPosts, chkReplies, chkReposts, chkLikes, chkAllTabs, chkDryRun, selectSpeed].forEach((el) => {
-    el.addEventListener('change', saveCurrentSettings);
+  function updateSpeedButtonsUI(speed) {
+    speedButtons.forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-speed') === speed);
+    });
+  }
+
+  speedButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentSpeed = btn.getAttribute('data-speed');
+      updateSpeedButtonsUI(currentSpeed);
+      saveCurrentSettings();
+    });
   });
 
-  // "Select Delete All" Master Toggle
-  btnSelectAll.addEventListener('click', () => {
-    chkPosts.checked = true;
-    chkReplies.checked = true;
-    chkReposts.checked = true;
-    chkLikes.checked = true;
-    chkAllTabs.checked = true;
-    saveCurrentSettings();
+  // Presets Handlers
+  function activatePreset(pill, posts, replies, reposts, likes, allTabs) {
+    presetPills.forEach((p) => p.classList.remove('active'));
+    pill.classList.add('active');
 
-    // Visual button feedback
+    chkPosts.checked = posts;
+    chkReplies.checked = replies;
+    chkReposts.checked = reposts;
+    chkLikes.checked = likes;
+    chkAllTabs.checked = allTabs;
+    saveCurrentSettings();
+  }
+
+  presetAll.addEventListener('click', () => {
+    activatePreset(presetAll, true, true, true, true, true);
+  });
+
+  presetReplies.addEventListener('click', () => {
+    activatePreset(presetReplies, false, true, false, false, false);
+  });
+
+  presetSocial.addEventListener('click', () => {
+    activatePreset(presetSocial, false, false, true, true, true);
+  });
+
+  // Checkbox bindings
+  [chkPosts, chkReplies, chkReposts, chkLikes, chkAllTabs, chkDryRun].forEach((el) => {
+    el.addEventListener('change', () => {
+      presetPills.forEach((p) => p.classList.remove('active'));
+      saveCurrentSettings();
+    });
+  });
+
+  // Master "Select Delete All"
+  btnSelectAll.addEventListener('click', () => {
+    activatePreset(presetAll, true, true, true, true, true);
     btnSelectAll.textContent = '✓ All Selected';
     setTimeout(() => {
       btnSelectAll.textContent = 'Select Delete All';
     }, 1500);
   });
 
-  // Main Action: WIPE EVERYTHING NOW
+  // Audio Toggle
+  btnAudioToggle.addEventListener('click', () => {
+    audioEnabled = !audioEnabled;
+    btnAudioToggle.textContent = audioEnabled ? '🔊' : '🔇';
+    saveCurrentSettings();
+  });
+
+  // WIPE EVERYTHING NOW
   btnMainAction.addEventListener('click', () => {
     if (!isTwitterTab || !activeTab) return;
 
     const options = saveCurrentSettings();
-
-    // Check if at least one category selected
     if (!options.deletePosts && !options.deleteReplies && !options.deleteReposts && !options.deleteLikes) {
-      alert('Please select at least one target to delete!');
+      alert('Please select at least one category to delete!');
       return;
     }
 
@@ -213,13 +267,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Open X Tab Button
   btnOpenX.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'OPEN_TWITTER_PROFILE' });
     window.close();
   });
 
-  // Show Floating HUD Link
   linkShowHud.addEventListener('click', () => {
     if (isTwitterTab && activeTab) {
       chrome.tabs.sendMessage(activeTab.id, { action: 'SHOW_HUD' });
@@ -227,13 +279,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Archive Wiper Link
   linkArchiveWiper.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'OPEN_ARCHIVE_VIEW' });
     window.close();
   });
 
-  // Polling interval while popup is open to keep live stats in sync
+  // Poll engine while popup is open
   const pollInterval = setInterval(() => {
     if (isTwitterTab && activeTab) {
       chrome.tabs.sendMessage(activeTab.id, { action: 'GET_STATUS' }, (res) => {
@@ -242,7 +293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
-  }, 600);
+  }, 500);
 
   window.addEventListener('unload', () => {
     clearInterval(pollInterval);

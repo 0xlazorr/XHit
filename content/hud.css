@@ -1,16 +1,17 @@
-/* XHit Floating HUD Styles - Completely Scoped and Isolated */
+/* XHit Next-Gen Floating HUD Styles - Scoped, Glassmorphic & Modern */
 
 #xhit-hud-root {
   all: initial;
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 2147483647; /* Highest possible z-index */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
   box-sizing: border-box;
   color: #f3f4f6;
   direction: ltr;
   text-align: left;
+  user-select: none;
 }
 
 #xhit-hud-root * {
@@ -18,26 +19,63 @@
   font-family: inherit;
 }
 
+/* Main Card */
 .xhit-card {
-  background: rgba(15, 17, 23, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 16px;
-  width: 320px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(239, 68, 68, 0.2);
+  background: rgba(12, 14, 22, 0.88);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  width: 330px;
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.8),
+    0 0 1px 1px rgba(255, 255, 255, 0.12),
+    0 0 24px rgba(239, 68, 68, 0.2);
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Minimized Capsule (Dynamic Island Style) */
 .xhit-card.xhit-minimized {
   width: auto;
-  border-radius: 30px;
+  border-radius: 36px;
+  background: rgba(12, 14, 22, 0.94);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(239, 68, 68, 0.3);
 }
 
+.xhit-card.xhit-minimized .xhit-header {
+  border-bottom: none;
+  padding: 8px 14px;
+  gap: 12px;
+}
+
+.xhit-card.xhit-minimized .xhit-title,
+.xhit-card.xhit-minimized .xhit-status-bar,
 .xhit-card.xhit-minimized .xhit-body,
 .xhit-card.xhit-minimized .xhit-footer {
   display: none !important;
+}
+
+.xhit-mini-pill {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f3f4f6;
+}
+
+.xhit-card.xhit-minimized .xhit-mini-pill {
+  display: flex !important;
+}
+
+.xhit-mini-count {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px;
 }
 
 /* Header */
@@ -46,41 +84,40 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(24, 27, 36, 0.9);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   cursor: grab;
-  user-select: none;
 }
 
-.xhit-card.xhit-minimized .xhit-header {
-  border-bottom: none;
-  padding: 8px 14px;
+.xhit-header:active {
+  cursor: grabbing;
 }
 
 .xhit-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .xhit-logo-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #ef4444, #991b1b);
-  border-radius: 6px;
+  border-radius: 7px;
   font-weight: 900;
   font-size: 13px;
-  color: #fff;
-  letter-spacing: -0.5px;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  position: relative;
 }
 
 .xhit-title {
   font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
   color: #ffffff;
 }
 
@@ -91,7 +128,7 @@
 .xhit-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .xhit-icon-btn {
@@ -99,13 +136,13 @@
   border: none;
   color: #9ca3af;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
   transition: all 0.15s ease;
 }
 
@@ -114,26 +151,26 @@
   color: #ffffff;
 }
 
-/* Status Banner */
+/* Status Bar */
 .xhit-status-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  font-size: 11px;
+  background: rgba(0, 0, 0, 0.25);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .xhit-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-weight: 600;
+  gap: 6px;
+  font-weight: 700;
   text-transform: uppercase;
   font-size: 10px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 12px;
+  letter-spacing: 0.5px;
 }
 
 .xhit-badge-dot {
@@ -143,7 +180,7 @@
 }
 
 .xhit-badge-idle {
-  background: rgba(156, 163, 175, 0.15);
+  background: rgba(156, 163, 175, 0.12);
   color: #9ca3af;
 }
 .xhit-badge-idle .xhit-badge-dot {
@@ -153,6 +190,7 @@
 .xhit-badge-running {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .xhit-badge-running .xhit-badge-dot {
   background: #ef4444;
@@ -163,6 +201,7 @@
 .xhit-badge-paused {
   background: rgba(234, 179, 8, 0.2);
   color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
 }
 .xhit-badge-paused .xhit-badge-dot {
   background: #eab308;
@@ -171,7 +210,7 @@
 .xhit-user-tag {
   color: #9ca3af;
   font-size: 11px;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Body */
@@ -192,10 +231,18 @@
 .xhit-stat-box {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 8px 10px;
+  border-radius: 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.xhit-stat-box:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .xhit-stat-label {
@@ -203,26 +250,93 @@
   text-transform: uppercase;
   color: #9ca3af;
   letter-spacing: 0.5px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .xhit-stat-num {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   color: #ffffff;
-  margin-top: 2px;
+  margin-top: 3px;
+  letter-spacing: -0.5px;
 }
 
 .xhit-stat-box.highlight {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.35);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.02));
 }
 
 .xhit-stat-box.highlight .xhit-stat-num {
   color: #ef4444;
 }
 
-/* Controls */
+/* Live Tweet Spotlight Card */
+.xhit-spotlight {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.xhit-spotlight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.xhit-spotlight-text {
+  font-size: 11px;
+  color: #e5e7eb;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+
+/* Speed Segmented Pill Controls */
+.xhit-speed-pills {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.xhit-speed-pill {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.xhit-speed-pill:hover {
+  color: #ffffff;
+}
+
+.xhit-speed-pill.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Action Controls */
 .xhit-controls {
   display: flex;
   gap: 8px;
@@ -231,8 +345,8 @@
 .xhit-btn {
   flex: 1;
   border: none;
-  border-radius: 8px;
-  padding: 9px 12px;
+  border-radius: 10px;
+  padding: 10px 14px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -247,12 +361,19 @@
 .xhit-btn-primary {
   background: linear-gradient(135deg, #ef4444, #b91c1c);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45);
+  position: relative;
+  overflow: hidden;
 }
 
 .xhit-btn-primary:hover {
   background: linear-gradient(135deg, #dc2626, #991b1b);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.55);
+}
+
+.xhit-btn-primary:active {
+  transform: translateY(0);
 }
 
 .xhit-btn-secondary {
@@ -268,31 +389,32 @@
 .xhit-btn-danger {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .xhit-btn-danger:hover {
   background: rgba(239, 68, 68, 0.25);
 }
 
-/* Log output */
+/* Activity Log Area */
 .xhit-log-area {
   background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   padding: 8px 10px;
   max-height: 60px;
   overflow-y: hidden;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10px;
   color: #9ca3af;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .xhit-log-entry {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: xhit-fadein 0.2s ease;
 }
 
 .xhit-log-entry.active {
@@ -309,7 +431,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 11px;
 }
 
@@ -330,6 +452,12 @@
   accent-color: #ef4444;
 }
 
+.xhit-dock-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 @keyframes xhit-pulse {
   0%, 100% {
     opacity: 1;
@@ -338,5 +466,16 @@
   50% {
     opacity: 0.4;
     transform: scale(1.3);
+  }
+}
+
+@keyframes xhit-fadein {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

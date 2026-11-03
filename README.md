@@ -3,25 +3,32 @@
 [![Manifest V3](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local%20%7C%20No%20Servers-success.svg)](#privacy--security)
 [![License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.0.0-crimson.svg)](https://github.com/0xlazorr/XHit/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.0-crimson.svg)](https://github.com/0xlazorr/XHit/releases)
 
-**XHit** is a powerful, locally-run Chrome extension designed to cleanly and completely wipe your presence on Twitter / X. Whether you want to delete all tweets, wipe replies and comments, undo reposts (retweets), or remove all your likes, XHit provides a seamless, one-click solution with zero server dependencies and built-in rate-limit protection.
+**XHit** is a powerful, locally-run Chrome extension designed to cleanly and completely wipe your presence on Twitter / X. Whether you want to delete all tweets, wipe replies and comments, undo reposts (retweets), or remove all your likes, XHit provides a seamless, one-click solution with zero server dependencies, rate-limit protection, and an ultra-modern UI/UX.
 
 ---
 
 ## 🌟 Key Highlights
 
-- **⚡ One-Click "Select Delete All"**: Select all wipe targets with a single click and let XHit purge your entire history.
+- **⚡ One-Click "Select Delete All" & Quick Presets**:
+  - **⚡ Wipe All**: Complete account purge across all tabs.
+  - **💬 Replies Only**: Wipe comment and thread history while preserving original tweets.
+  - **🔁 RTs & Likes**: Clear your engagement footprint.
 - **🔄 Automated Multi-Tab Progression**: Cleans your **Posts** (`/username`), automatically transitions to **Replies & Comments** (`/username/with_replies`), and finishes with **Likes** (`/username/likes`).
-- **🖥️ Dual Control Interface**:
-  - **Extension Popup**: Modern obsidian & cyberpunk interface for quick configuration and target selection.
-  - **In-Page Floating HUD Dock**: A live, draggable overlay directly on `x.com` that displays real-time counters, activity logs, pause/resume, and stop buttons without closing when you interact with the page.
+- **🖥️ Next-Gen Dual Control Interface**:
+  - **Extension Popup**: Premium obsidian & glassmorphism dashboard with segmented speed buttons, preset pills, and live stats.
+  - **In-Page Floating HUD Dock**: A live, draggable overlay directly on `x.com` featuring:
+    - **Dynamic Island Minimized Mode**: Collapses into an ultra-compact floating status pill (`[ ⚡ 24 Wiped • Wiping... ]`).
+    - **Target Spotlight**: Real-time preview of the tweet text snippet currently being processed.
+    - **Speed Switcher**: Switch between *Safe*, *Balanced*, and *Turbo* speeds on the fly.
+    - **Sound FX & Confetti**: Lightweight synthesized audio clicks and victory confetti upon completion.
 - **🛡️ Anti-Ban & Rate-Limit Shield**:
   - Configurable speeds: **Safe** (~1.5s human simulation), **Balanced** (~0.8s), or **Turbo** (~0.4s).
   - Dynamic rate-limit detection: Automatically pauses for 30s with countdown if Twitter sends a rate-limit toast, then resumes automatically.
 - **🔍 Dry-Run Preview Mode**: Highlights tweets in real-time with colored borders and counts them without deleting, giving you 100% confidence before committing.
 - **📁 Twitter Archive Deep Wiper (`tweets.js` support)**:
-  - Twitter caps public timelines to ~3,200 posts. If your account has 5,000 to 20,000+ tweets, load your official Twitter archive (`data/tweets.js`) to deep-wipe every post, filter by date, and export clean JSON backups.
+  - Twitter caps public timelines to ~3,200 posts. If your account has 5,000 to 20,000+ tweets, load your official Twitter archive (`data/tweets.js`) to deep-wipe every post, filter by date or engagement, and export clean **JSON** and **CSV** backups.
 - **🔒 100% Local & Private**: Runs entirely within your browser session. No API keys, no passwords, no telemetry, and zero third-party servers.
 
 ---

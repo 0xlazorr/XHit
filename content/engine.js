@@ -351,12 +351,18 @@ class XHitEngine {
 
   // Handle post/reply deletion via caret menu
   async handleDeletePost(article, caretBtn, isReply) {
+    const textEl = article.querySelector('[data-testid="tweetText"]');
+    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Post';
+    const itemType = isReply ? 'Reply' : 'Post';
+
+    this.notify('item_target', { type: itemType, snippet });
+
     if (this.options.dryRun) {
       this.highlightElement(article, '#ef4444');
       if (isReply) this.stats.replies++;
       else this.stats.posts++;
       this.stats.total++;
-      this.notify('item_deleted', { type: isReply ? 'Reply' : 'Post', dryRun: true });
+      this.notify('item_deleted', { type: itemType, snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
@@ -418,7 +424,8 @@ class XHitEngine {
     this.stats.total++;
 
     this.notify('item_deleted', {
-      type: isReply ? 'Reply' : 'Post',
+      type: itemType,
+      snippet,
       stats: this.stats
     });
 
@@ -427,11 +434,15 @@ class XHitEngine {
 
   // Handle Unretweet / Undo Repost
   async handleUnretweet(article, unretweetBtn) {
+    const textEl = article.querySelector('[data-testid="tweetText"]');
+    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Reposted Tweet';
+    this.notify('item_target', { type: 'Repost', snippet });
+
     if (this.options.dryRun) {
       this.highlightElement(article, '#3b82f6');
       this.stats.reposts++;
       this.stats.total++;
-      this.notify('item_deleted', { type: 'Repost', dryRun: true });
+      this.notify('item_deleted', { type: 'Repost', snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
@@ -455,18 +466,22 @@ class XHitEngine {
 
     this.stats.reposts++;
     this.stats.total++;
-    this.notify('item_deleted', { type: 'Repost', stats: this.stats });
+    this.notify('item_deleted', { type: 'Repost', snippet, stats: this.stats });
 
     return { success: true };
   }
 
   // Handle Unlike
   async handleUnlike(article, unlikeBtn) {
+    const textEl = article.querySelector('[data-testid="tweetText"]');
+    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Liked Tweet';
+    this.notify('item_target', { type: 'Like', snippet });
+
     if (this.options.dryRun) {
       this.highlightElement(article, '#ec4899');
       this.stats.likes++;
       this.stats.total++;
-      this.notify('item_deleted', { type: 'Like', dryRun: true });
+      this.notify('item_deleted', { type: 'Like', snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
@@ -480,7 +495,7 @@ class XHitEngine {
 
     this.stats.likes++;
     this.stats.total++;
-    this.notify('item_deleted', { type: 'Like', stats: this.stats });
+    this.notify('item_deleted', { type: 'Like', snippet, stats: this.stats });
 
     return { success: true };
   }

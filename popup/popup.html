@@ -11,31 +11,53 @@
     <!-- Header -->
     <header class="app-header">
       <div class="brand">
-        <div class="brand-icon">✕</div>
+        <div class="brand-icon-wrap">
+          <div class="brand-icon">✕</div>
+          <div class="brand-ring"></div>
+        </div>
         <div class="brand-text">
           <h1>X<span>Hit</span></h1>
-          <span class="version-tag">v1.0.0</span>
+          <span class="version-tag">v1.1.0</span>
         </div>
       </div>
-      <div class="header-status" id="header-status">
-        <span class="status-dot"></span>
-        <span class="status-label" id="status-label">Standby</span>
+      <div class="header-actions">
+        <button class="icon-toggle-btn" id="btn-audio-toggle" title="Toggle Sound FX">🔊</button>
+        <div class="header-status" id="header-status">
+          <span class="status-dot"></span>
+          <span class="status-label" id="status-label">Standby</span>
+        </div>
       </div>
     </header>
 
     <!-- Context Status Banner -->
     <div class="context-card" id="context-card">
       <div class="context-info">
-        <span class="context-icon" id="context-icon">⚡</span>
+        <div class="user-avatar-badge" id="user-avatar-badge">X</div>
         <div class="context-details">
           <div class="context-title" id="context-title">Detecting Tab...</div>
-          <div class="context-subtitle" id="context-subtitle">Checking x.com connection</div>
+          <div class="context-subtitle" id="context-subtitle">Connecting to X.com</div>
         </div>
       </div>
       <button class="btn-sm btn-outline" id="btn-open-x" style="display: none;">Open X</button>
     </div>
 
-    <!-- Live Counter Card -->
+    <!-- Quick Presets -->
+    <div class="presets-section">
+      <span class="section-label">Quick Presets</span>
+      <div class="presets-row">
+        <button class="preset-pill active" id="preset-all" title="Wipe Posts, Replies, Reposts & Likes with Auto-Progress">
+          ⚡ Wipe All
+        </button>
+        <button class="preset-pill" id="preset-replies" title="Wipe only Comments and Replies">
+          💬 Replies Only
+        </button>
+        <button class="preset-pill" id="preset-social" title="Undo all Retweets and Unlike all posts">
+          🔁 RTs & Likes
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Counter Cards -->
     <div class="stats-overview" id="stats-overview">
       <div class="stat-pill highlight">
         <span class="stat-title">Total Wiped</span>
@@ -50,14 +72,13 @@
         <span class="stat-value" id="stat-replies">0</span>
       </div>
       <div class="stat-pill">
-        <span class="stat-title">Reposts / Likes</span>
+        <span class="stat-title">RTs / Likes</span>
         <span class="stat-value" id="stat-other">0</span>
       </div>
     </div>
 
-    <!-- Main Configuration Panel -->
+    <!-- Target Configuration Panel -->
     <section class="config-section">
-      <!-- Master "Select Delete All" Header -->
       <div class="section-header">
         <span class="section-title">Wipe Targets</span>
         <button class="btn-text" id="btn-select-all">Select Delete All</button>
@@ -87,39 +108,46 @@
         </label>
       </div>
 
-      <!-- Options / Speed Settings -->
+      <!-- Options / Multi-Tab & Dry Run -->
       <div class="settings-group">
         <div class="setting-row">
-          <label class="setting-label">Multi-Tab Wipe</label>
+          <div>
+            <div class="setting-label">Multi-Tab Wipe</div>
+            <div class="setting-hint">Auto progresses: Posts → Replies → Likes</div>
+          </div>
           <label class="switch">
             <input type="checkbox" id="chk-all-tabs" checked>
             <span class="slider"></span>
           </label>
         </div>
-        <div class="setting-hint">Automatically progresses: Posts → Replies → Likes</div>
 
-        <div class="setting-row mt-8">
-          <label class="setting-label">Dry Run (Preview Only)</label>
+        <div class="setting-row mt-10">
+          <div>
+            <div class="setting-label">Dry Run (Preview Only)</div>
+            <div class="setting-hint">Highlights targets without deleting</div>
+          </div>
           <label class="switch">
             <input type="checkbox" id="chk-dry-run">
             <span class="slider"></span>
           </label>
         </div>
 
-        <div class="setting-row mt-8">
-          <label class="setting-label">Speed & Jitter</label>
-          <select id="select-speed" class="custom-select">
-            <option value="safe">Safe (Anti-Ban, ~1.5s)</option>
-            <option value="balanced" selected>Balanced (~0.8s)</option>
-            <option value="turbo">Turbo (Fastest, ~0.4s)</option>
-          </select>
+        <!-- Segmented Speed Selector -->
+        <div class="speed-control-wrap mt-10">
+          <span class="setting-label">Speed & Anti-Ban</span>
+          <div class="speed-segmented" id="speed-segmented">
+            <button class="speed-segment-btn" data-speed="safe" title="Safe Mode: ~1.8s delay with randomized human jitter">🛡️ Safe</button>
+            <button class="speed-segment-btn active" data-speed="balanced" title="Balanced Mode: ~0.8s delay">⚡ Balanced</button>
+            <button class="speed-segment-btn" data-speed="turbo" title="Turbo Mode: ~0.4s delay">🚀 Turbo</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Action Area -->
+    <!-- Action Buttons -->
     <div class="action-section">
       <button class="btn-hero" id="btn-main-action">
+        <span class="btn-hero-glow"></span>
         <span class="btn-hero-icon">⚡</span>
         <span class="btn-hero-text" id="btn-main-text">WIPE EVERYTHING NOW</span>
       </button>
@@ -132,7 +160,7 @@
 
     <!-- Extra Utility Links -->
     <footer class="app-footer">
-      <button class="footer-link" id="link-show-hud">Show Floating HUD</button>
+      <button class="footer-link" id="link-show-hud">Show In-Page HUD</button>
       <span class="footer-dot">•</span>
       <button class="footer-link" id="link-archive-wiper">Archive Wiper (tweets.js)</button>
     </footer>
