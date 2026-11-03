@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XHit — Twitter Archive Deep Cleaner</title>
+  <link rel="stylesheet" href="archive.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">✕</div>
+        <div class="brand-title">X<span>Hit</span> Archive Wiper</div>
+      </div>
+      <div class="nav-links">
+        <a href="https://x.com" target="_blank" class="nav-btn">Open X.com</a>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Hero Banner -->
+      <section class="hero-banner">
+        <h2>Deep Wipe from Twitter Archive</h2>
+        <p>Twitter's timeline caps visible tweets to ~3,200 posts. To wipe all 5,000, 10,000, or older tweets from years ago, load your <code>data/tweets.js</code> file from your official Twitter/X data archive.</p>
+      </section>
+
+      <!-- Dropzone -->
+      <section class="upload-section">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-title">Drop your <code>tweets.js</code> file here</div>
+          <div class="dropzone-sub">or click to browse from your computer</div>
+          <input type="file" id="file-input" accept=".js,.json" style="display: none;">
+        </div>
+      </section>
+
+      <!-- Results & Operations Area -->
+      <section class="results-section" id="results-section" style="display: none;">
+        <!-- Stats Bar -->
+        <div class="archive-stats">
+          <div class="stat-card">
+            <span class="stat-title">Loaded Posts</span>
+            <span class="stat-value" id="count-total">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Oldest Post</span>
+            <span class="stat-value" id="date-oldest">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Newest Post</span>
+            <span class="stat-value" id="date-newest">-</span>
+          </div>
+          <div class="stat-card highlight">
+            <span class="stat-title">Wipe Queue</span>
+            <span class="stat-value" id="count-queue">0</span>
+          </div>
+        </div>
+
+        <!-- Controls & Filters -->
+        <div class="controls-panel">
+          <div class="filter-group">
+            <label>Filter by Date</label>
+            <select id="filter-date" class="form-select">
+              <option value="all">Wipe All Time (Everything)</option>
+              <option value="1year">Older than 1 Year</option>
+              <option value="6months">Older than 6 Months</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Keyword Filter</label>
+            <input type="text" id="filter-keyword" class="form-input" placeholder="Search text (optional)...">
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-primary" id="btn-start-archive-wipe">⚡ Wipe Filtered Posts</button>
+            <button class="btn btn-outline" id="btn-export-backup">💾 Export Backup (JSON)</button>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progress-container" style="display: none;">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+          </div>
+          <div class="progress-status" id="progress-status">Preparing wipe...</div>
+        </div>
+
+        <!-- Tweet Table Preview -->
+        <div class="table-container">
+          <table class="tweet-table">
+            <thead>
+              <tr>
+                <th width="150">Date</th>
+                <th>Content Preview</th>
+                <th width="80">Likes</th>
+                <th width="80">RTs</th>
+                <th width="100">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tweets-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="archive.js"></script>
+</body>
+</html>

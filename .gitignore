@@ -1,0 +1,18 @@
+# OS & IDE files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node / NPM
+node_modules/
+package-lock.json
+
+# Archive / Temp test files
+*.zip
+*.tar.gz
+data/
+tweets.js

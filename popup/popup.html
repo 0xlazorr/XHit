@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XHit — Twitter Post Eraser</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">✕</div>
+        <div class="brand-text">
+          <h1>X<span>Hit</span></h1>
+          <span class="version-tag">v1.0.0</span>
+        </div>
+      </div>
+      <div class="header-status" id="header-status">
+        <span class="status-dot"></span>
+        <span class="status-label" id="status-label">Standby</span>
+      </div>
+    </header>
+
+    <!-- Context Status Banner -->
+    <div class="context-card" id="context-card">
+      <div class="context-info">
+        <span class="context-icon" id="context-icon">⚡</span>
+        <div class="context-details">
+          <div class="context-title" id="context-title">Detecting Tab...</div>
+          <div class="context-subtitle" id="context-subtitle">Checking x.com connection</div>
+        </div>
+      </div>
+      <button class="btn-sm btn-outline" id="btn-open-x" style="display: none;">Open X</button>
+    </div>
+
+    <!-- Live Counter Card -->
+    <div class="stats-overview" id="stats-overview">
+      <div class="stat-pill highlight">
+        <span class="stat-title">Total Wiped</span>
+        <span class="stat-value" id="stat-total">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-title">Posts</span>
+        <span class="stat-value" id="stat-posts">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-title">Replies</span>
+        <span class="stat-value" id="stat-replies">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-title">Reposts / Likes</span>
+        <span class="stat-value" id="stat-other">0</span>
+      </div>
+    </div>
+
+    <!-- Main Configuration Panel -->
+    <section class="config-section">
+      <!-- Master "Select Delete All" Header -->
+      <div class="section-header">
+        <span class="section-title">Wipe Targets</span>
+        <button class="btn-text" id="btn-select-all">Select Delete All</button>
+      </div>
+
+      <!-- Target Checkboxes Grid -->
+      <div class="checkbox-grid">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="chk-posts" checked>
+          <span class="checkmark"></span>
+          <span class="cb-label">Posts & Tweets</span>
+        </label>
+        <label class="custom-checkbox">
+          <input type="checkbox" id="chk-replies" checked>
+          <span class="checkmark"></span>
+          <span class="cb-label">Replies & Comments</span>
+        </label>
+        <label class="custom-checkbox">
+          <input type="checkbox" id="chk-reposts" checked>
+          <span class="checkmark"></span>
+          <span class="cb-label">Reposts (Retweets)</span>
+        </label>
+        <label class="custom-checkbox">
+          <input type="checkbox" id="chk-likes" checked>
+          <span class="checkmark"></span>
+          <span class="cb-label">Liked Posts</span>
+        </label>
+      </div>
+
+      <!-- Options / Speed Settings -->
+      <div class="settings-group">
+        <div class="setting-row">
+          <label class="setting-label">Multi-Tab Wipe</label>
+          <label class="switch">
+            <input type="checkbox" id="chk-all-tabs" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-hint">Automatically progresses: Posts → Replies → Likes</div>
+
+        <div class="setting-row mt-8">
+          <label class="setting-label">Dry Run (Preview Only)</label>
+          <label class="switch">
+            <input type="checkbox" id="chk-dry-run">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row mt-8">
+          <label class="setting-label">Speed & Jitter</label>
+          <select id="select-speed" class="custom-select">
+            <option value="safe">Safe (Anti-Ban, ~1.5s)</option>
+            <option value="balanced" selected>Balanced (~0.8s)</option>
+            <option value="turbo">Turbo (Fastest, ~0.4s)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Area -->
+    <div class="action-section">
+      <button class="btn-hero" id="btn-main-action">
+        <span class="btn-hero-icon">⚡</span>
+        <span class="btn-hero-text" id="btn-main-text">WIPE EVERYTHING NOW</span>
+      </button>
+
+      <div class="action-subgroup" id="running-controls" style="display: none;">
+        <button class="btn-action btn-secondary" id="btn-pause">⏸ Pause</button>
+        <button class="btn-action btn-danger" id="btn-stop">⏹ Stop</button>
+      </div>
+    </div>
+
+    <!-- Extra Utility Links -->
+    <footer class="app-footer">
+      <button class="footer-link" id="link-show-hud">Show Floating HUD</button>
+      <span class="footer-dot">•</span>
+      <button class="footer-link" id="link-archive-wiper">Archive Wiper (tweets.js)</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

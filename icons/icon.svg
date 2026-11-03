@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141721" />
+      <stop offset="100%" stop-color="#090a0f" />
+    </linearGradient>
+    <linearGradient id="strikeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3366" />
+      <stop offset="100%" stop-color="#ef4444" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#bgGrad)" stroke="#ef4444" stroke-width="8" stroke-opacity="0.8"/>
+
+  <!-- Crosshair Ticks -->
+  <line x1="256" y1="44" x2="256" y2="84" stroke="#ef4444" stroke-width="14" stroke-linecap="round" />
+  <line x1="256" y1="428" x2="256" y2="468" stroke="#ef4444" stroke-width="14" stroke-linecap="round" />
+  <line x1="44" y1="256" x2="84" y2="256" stroke="#ef4444" stroke-width="14" stroke-linecap="round" />
+  <line x1="428" y1="256" x2="468" y2="256" stroke="#ef4444" stroke-width="14" stroke-linecap="round" />
+
+  <!-- White Diagonal Line of X -->
+  <line x1="140" y1="140" x2="372" y2="372" stroke="#ffffff" stroke-width="44" stroke-linecap="round" />
+
+  <!-- Red Accent Strike Line of X -->
+  <line x1="372" y1="140" x2="140" y2="372" stroke="url(#strikeGrad)" stroke-width="44" stroke-linecap="round" filter="url(#glow)" />
+
+  <!-- Center Target Core -->
+  <circle cx="256" cy="256" r="32" fill="#ffffff" />
+  <circle cx="256" cy="256" r="16" fill="#ef4444" />
+</svg>
