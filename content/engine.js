@@ -1,6 +1,7 @@
 /**
  * XHit - Ultimate Twitter / X Post Eraser Engine
- * Robust DOM Automation, Rate-Limit Protection, & Virtualization Scroll Manager
+ * Hybrid High-Efficiency Engine: Direct GraphQL Web API + Instant DOM Fallback
+ * Optimized for Background Tabs, Zero Virtualization Thrashing, and Anti-Rate-Limit Protection
  */
 
 class XHitEngine {
@@ -29,9 +30,27 @@ class XHitEngine {
     };
 
     this.processedElements = new WeakSet();
+    this.processedTweetIds = new Set();
     this.consecutiveEmptyScrolls = 0;
     this.maxEmptyScrolls = 4;
     this.listeners = [];
+
+    // Web Client GraphQL Configuration
+    this.bearerToken = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+    this.queryIds = {
+      DeleteTweet: 'VaenaVgh5q5ih7kvyVjgtg',
+      DeleteRetweet: 'iQtK4dl5hBmXewYZuEOKVw',
+      UnfavoriteTweet: 'ZYKSe-w7KEslx3JhSIk5LA',
+      DeleteBookmark: 'Wlmlj2-xzyS1GN3a6cj-mQ'
+    };
+
+    // Flag for API fast-path viability
+    this.useApi = true;
+    this.scanBundlesForQueryIds();
+
+    // Background keepalive interval
+    this.keepAliveInterval = null;
+    this.setupKeepAlive();
   }
 
   // Event listener subscription for HUD & Popup
@@ -70,12 +89,66 @@ class XHitEngine {
       stats: { ...this.stats },
       options: { ...this.options },
       currentStage: this.currentStage,
-      currentUser: this.currentUser
+      currentUser: this.currentUser,
+      useApi: this.useApi
     };
   }
 
   setOptions(newOpts) {
     this.options = { ...this.options, ...newOpts };
+  }
+
+  // Prevent background tab throttling via periodic pings and visibility tracking
+  setupKeepAlive() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.isRunning) {
+        console.log('[XHit] Tab entered background. High-efficiency instant mode active.');
+      }
+    });
+
+    if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
+    this.keepAliveInterval = setInterval(() => {
+      if (this.isRunning) {
+        try {
+          chrome.runtime.sendMessage({ action: 'KEEP_ALIVE' }).catch(() => {});
+        } catch (e) {}
+      }
+    }, 12000);
+  }
+
+  // Extract ct0 CSRF cookie from document
+  getCsrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)ct0=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  // Optional background scan of script tags for updated GraphQL query hashes
+  scanBundlesForQueryIds() {
+    try {
+      const scripts = Array.from(document.querySelectorAll('script[src*="client-web"]'));
+      for (const s of scripts) {
+        const src = s.getAttribute('src');
+        if (src && (src.includes('main') || src.includes('endpoints') || src.includes('api'))) {
+          // Asynchronously inspect in idle if necessary
+          fetch(src)
+            .then((res) => res.text())
+            .then((text) => {
+              const delMatch = text.match(/queryId\s*:\s*["']([a-zA-Z0-9_-]+)["'].*?operationName\s*:\s*["']DeleteTweet["']/s) ||
+                               text.match(/operationName\s*:\s*["']DeleteTweet["'].*?queryId\s*:\s*["']([a-zA-Z0-9_-]+)["']/s);
+              if (delMatch && delMatch[1]) this.queryIds.DeleteTweet = delMatch[1];
+
+              const rtMatch = text.match(/queryId\s*:\s*["']([a-zA-Z0-9_-]+)["'].*?operationName\s*:\s*["']DeleteRetweet["']/s) ||
+                              text.match(/operationName\s*:\s*["']DeleteRetweet["'].*?queryId\s*:\s*["']([a-zA-Z0-9_-]+)["']/s);
+              if (rtMatch && rtMatch[1]) this.queryIds.DeleteRetweet = rtMatch[1];
+
+              const favMatch = text.match(/queryId\s*:\s*["']([a-zA-Z0-9_-]+)["'].*?operationName\s*:\s*["']UnfavoriteTweet["']/s) ||
+                               text.match(/operationName\s*:\s*["']UnfavoriteTweet["'].*?queryId\s*:\s*["']([a-zA-Z0-9_-]+)["']/s);
+              if (favMatch && favMatch[1]) this.queryIds.UnfavoriteTweet = favMatch[1];
+            })
+            .catch(() => {});
+        }
+      }
+    } catch (e) {}
   }
 
   // Detect currently logged in user handle
@@ -113,19 +186,33 @@ class XHitEngine {
     return null;
   }
 
-  // Timing delays based on speed profile
+  // Extract Tweet ID directly from tweet element's status link
+  extractTweetId(article) {
+    if (!article) return null;
+    const links = article.querySelectorAll('a[href*="/status/"]');
+    for (const a of links) {
+      const href = a.getAttribute('href') || '';
+      const match = href.match(/\/status\/(\d+)/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  }
+
+  // High-efficiency timing delays (optimized for API throughput with safe jitter)
   getDelay() {
     switch (this.options.speed) {
       case 'turbo':
-        // 300ms - 500ms
-        return Math.floor(Math.random() * 200) + 300;
+        // 80ms - 180ms (Instant API burst)
+        return Math.floor(Math.random() * 100) + 80;
       case 'safe':
-        // 1400ms - 2400ms (Human-like behavior)
-        return Math.floor(Math.random() * 1000) + 1400;
+        // 700ms - 1200ms (Conservative rate limit buffer)
+        return Math.floor(Math.random() * 500) + 700;
       case 'balanced':
       default:
-        // 700ms - 1200ms
-        return Math.floor(Math.random() * 500) + 700;
+        // 250ms - 450ms (Optimal efficiency & stability)
+        return Math.floor(Math.random() * 200) + 250;
     }
   }
 
@@ -133,23 +220,23 @@ class XHitEngine {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // Wait for an element to match a selector
-  async waitForElement(selector, root = document, timeout = 3000) {
+  // Wait for an element to match a selector (fast polling)
+  async waitForElement(selector, root = document, timeout = 1500) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       const el = root.querySelector(selector);
       if (el) return el;
-      await this.sleep(100);
+      await this.sleep(60);
     }
     return null;
   }
 
   // Wait for element to be removed from DOM
-  async waitForRemoval(element, timeout = 3000) {
+  async waitForRemoval(element, timeout = 1500) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
       if (!element || !document.contains(element)) return true;
-      await this.sleep(100);
+      await this.sleep(60);
     }
     return false;
   }
@@ -172,7 +259,6 @@ class XHitEngine {
     document.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
     document.dispatchEvent(new KeyboardEvent('keyup', keyOpts));
 
-    // Fallback: dismiss dropdown/mask if still mounted
     const mask = document.querySelector('[data-testid="mask"]');
     if (mask) {
       this.simulateClick(mask);
@@ -193,6 +279,109 @@ class XHitEngine {
     return false;
   }
 
+  // Direct GraphQL API Call: DeleteTweet
+  async apiDeleteTweet(tweetId) {
+    const csrf = this.getCsrfToken();
+    if (!csrf) return { success: false, reason: 'Missing CSRF cookie' };
+
+    const queryId = this.queryIds.DeleteTweet;
+    const url = `https://x.com/i/api/graphql/${queryId}/DeleteTweet`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'authorization': this.bearerToken,
+          'content-type': 'application/json',
+          'x-csrf-token': csrf,
+          'x-twitter-active-user': 'yes',
+          'x-twitter-auth-type': 'OAuth2Session'
+        },
+        body: JSON.stringify({
+          variables: { tweet_id: String(tweetId), dark_request: false },
+          queryId
+        })
+      });
+
+      if (res.status === 429) {
+        return { rateLimited: true, reason: 'Rate limited (HTTP 429)' };
+      }
+      if (res.ok) {
+        return { success: true };
+      }
+      return { success: false, status: res.status, reason: `HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, reason: e.message };
+    }
+  }
+
+  // Direct GraphQL API Call: DeleteRetweet (Undo Repost)
+  async apiDeleteRetweet(sourceTweetId) {
+    const csrf = this.getCsrfToken();
+    if (!csrf) return { success: false, reason: 'Missing CSRF cookie' };
+
+    const queryId = this.queryIds.DeleteRetweet;
+    const url = `https://x.com/i/api/graphql/${queryId}/DeleteRetweet`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'authorization': this.bearerToken,
+          'content-type': 'application/json',
+          'x-csrf-token': csrf,
+          'x-twitter-active-user': 'yes',
+          'x-twitter-auth-type': 'OAuth2Session'
+        },
+        body: JSON.stringify({
+          variables: { source_tweet_id: String(sourceTweetId) },
+          queryId
+        })
+      });
+
+      if (res.status === 429) return { rateLimited: true };
+      if (res.ok) return { success: true };
+      return { success: false, status: res.status };
+    } catch (e) {
+      return { success: false, reason: e.message };
+    }
+  }
+
+  // Direct GraphQL API Call: UnfavoriteTweet (Unlike)
+  async apiUnlike(tweetId) {
+    const csrf = this.getCsrfToken();
+    if (!csrf) return { success: false, reason: 'Missing CSRF cookie' };
+
+    const queryId = this.queryIds.UnfavoriteTweet;
+    const url = `https://x.com/i/api/graphql/${queryId}/UnfavoriteTweet`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'authorization': this.bearerToken,
+          'content-type': 'application/json',
+          'x-csrf-token': csrf,
+          'x-twitter-active-user': 'yes',
+          'x-twitter-auth-type': 'OAuth2Session'
+        },
+        body: JSON.stringify({
+          variables: { tweet_id: String(tweetId) },
+          queryId
+        })
+      });
+
+      if (res.status === 429) return { rateLimited: true };
+      if (res.ok) return { success: true };
+      return { success: false, status: res.status };
+    } catch (e) {
+      return { success: false, reason: e.message };
+    }
+  }
+
   // Start the wiping engine
   async start() {
     if (this.isRunning) return;
@@ -201,7 +390,7 @@ class XHitEngine {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const isProfilePage = pathParts.length > 0 && user && pathParts[0].toLowerCase() === user.toLowerCase();
 
-    // If user is on home/explore/notifications, automatically redirect to their profile!
+    // If user is on home/explore/notifications, automatically redirect to their profile
     if (user && !isProfilePage) {
       this.notify('redirecting', { user, message: `Redirecting to your profile @${user}...` });
       sessionStorage.setItem('xhit_auto_start', '1');
@@ -213,7 +402,7 @@ class XHitEngine {
     this.isPaused = false;
     this.consecutiveEmptyScrolls = 0;
 
-    this.notify('started', { message: 'Engine started.' });
+    this.notify('started', { message: 'Engine started in high-efficiency hybrid mode.' });
 
     try {
       await this.runLoop();
@@ -226,19 +415,16 @@ class XHitEngine {
     }
   }
 
-  // Pause engine
   pause() {
     this.isPaused = true;
     this.notify('paused', { message: 'Execution paused.' });
   }
 
-  // Resume engine
   resume() {
     this.isPaused = false;
     this.notify('resumed', { message: 'Execution resumed.' });
   }
 
-  // Stop engine
   stop() {
     this.isRunning = false;
     this.isPaused = false;
@@ -248,19 +434,14 @@ class XHitEngine {
   // Main processing loop
   async runLoop() {
     while (this.isRunning) {
-      // Handle Pause
       while (this.isPaused && this.isRunning) {
-        await this.sleep(300);
+        await this.sleep(200);
       }
       if (!this.isRunning) break;
 
       // Rate limit check
       if (this.checkRateLimitToast()) {
-        this.notify('toast_warning', { message: 'Rate limit detected! Cooling down for 30s...' });
-        for (let i = 30; i > 0 && this.isRunning; i--) {
-          this.notify('cooldown', { secondsLeft: i });
-          await this.sleep(1000);
-        }
+        await this.handleRateLimitCooldown(30);
       }
 
       // Find all tweet articles currently in DOM
@@ -269,13 +450,12 @@ class XHitEngine {
 
       for (const article of tweetArticles) {
         if (!this.isRunning) break;
-        while (this.isPaused && this.isRunning) await this.sleep(300);
+        while (this.isPaused && this.isRunning) await this.sleep(200);
 
         if (this.processedElements.has(article)) {
           continue;
         }
 
-        // Determine tweet type & action
         const actionResult = await this.processTweet(article);
         this.processedElements.add(article);
 
@@ -283,6 +463,9 @@ class XHitEngine {
           processedAnyInBatch = true;
           this.consecutiveEmptyScrolls = 0;
           await this.sleep(this.getDelay());
+        } else if (actionResult.rateLimited) {
+          await this.handleRateLimitCooldown(30);
+          break; // break inner loop and retry after cooldown
         } else if (actionResult.skipped) {
           this.stats.skipped++;
           this.notify('item_skipped', { reason: actionResult.reason });
@@ -293,36 +476,51 @@ class XHitEngine {
       if (!processedAnyInBatch || tweetArticles.length === 0) {
         const scrolled = await this.scrollTimeline();
         if (!scrolled) {
-          // Reached end of current tab/stage
           const transitioned = await this.handleStageTransition();
           if (!transitioned) {
-            // All tabs completed!
             this.notify('completed', { message: 'All items wiped clean!' });
             break;
           }
         }
       }
 
-      await this.sleep(300);
+      await this.sleep(150);
     }
   }
 
-  // Inspect and process a single tweet element
+  async handleRateLimitCooldown(seconds = 30) {
+    this.notify('toast_warning', { message: `Rate limit detected! Cooling down for ${seconds}s...` });
+    for (let i = seconds; i > 0 && this.isRunning; i--) {
+      this.notify('cooldown', { secondsLeft: i });
+      await this.sleep(1000);
+    }
+  }
+
+  // Inspect and process a single tweet element (Fast-Path API + DOM Fallback)
   async processTweet(article) {
     try {
+      const tweetId = this.extractTweetId(article);
+      if (tweetId && this.processedTweetIds.has(tweetId)) {
+        article.remove();
+        return { skipped: true, reason: 'Already wiped' };
+      }
+
+      const textEl = article.querySelector('[data-testid="tweetText"]');
+      const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Post';
+
       // 1. Check if on Likes tab and Unlike option is enabled
       const isLikesTab = window.location.pathname.endsWith('/likes');
       if (isLikesTab && this.options.deleteLikes) {
         const unlikeBtn = article.querySelector('button[data-testid="unlike"]');
-        if (unlikeBtn) {
-          return await this.handleUnlike(article, unlikeBtn);
+        if (unlikeBtn || tweetId) {
+          return await this.handleUnlike(article, unlikeBtn, tweetId, snippet);
         }
       }
 
       // 2. Check if it is a Repost (Retweet)
       const unretweetBtn = article.querySelector('button[data-testid="unretweet"]');
       if (unretweetBtn && this.options.deleteReposts) {
-        return await this.handleUnretweet(article, unretweetBtn);
+        return await this.handleUnretweet(article, unretweetBtn, tweetId, snippet);
       }
 
       // 3. Check for Post / Reply deletion
@@ -333,13 +531,12 @@ class XHitEngine {
         return { skipped: true, reason: 'Target category disabled in settings' };
       }
 
-      // Check Caret button (three dots menu)
       const caretBtn = article.querySelector('button[data-testid="caret"], div[data-testid="caret"], [aria-label="More"]');
-      if (!caretBtn) {
-        return { skipped: true, reason: 'No caret menu found (not author)' };
+      if (!caretBtn && !tweetId) {
+        return { skipped: true, reason: 'No caret menu or ID found (not author)' };
       }
 
-      return await this.handleDeletePost(article, caretBtn, isRepliesTab);
+      return await this.handleDeletePost(article, caretBtn, tweetId, isRepliesTab, snippet);
     } catch (err) {
       console.error('[XHit] Error processing tweet:', err);
       this.stats.errors++;
@@ -349,12 +546,9 @@ class XHitEngine {
     }
   }
 
-  // Handle post/reply deletion via caret menu
-  async handleDeletePost(article, caretBtn, isReply) {
-    const textEl = article.querySelector('[data-testid="tweetText"]');
-    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Post';
+  // Handle post/reply deletion (API First -> DOM Fallback)
+  async handleDeletePost(article, caretBtn, tweetId, isReply, snippet) {
     const itemType = isReply ? 'Reply' : 'Post';
-
     this.notify('item_target', { type: itemType, snippet });
 
     if (this.options.dryRun) {
@@ -362,26 +556,55 @@ class XHitEngine {
       if (isReply) this.stats.replies++;
       else this.stats.posts++;
       this.stats.total++;
+      if (tweetId) this.processedTweetIds.add(tweetId);
       this.notify('item_deleted', { type: itemType, snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
 
-    // Scroll into view
-    article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await this.sleep(200);
+    // --- FAST PATH: Direct GraphQL API Deletion ---
+    if (this.useApi && tweetId) {
+      const apiResult = await this.apiDeleteTweet(tweetId);
+      if (apiResult.success) {
+        if (isReply) this.stats.replies++;
+        else this.stats.posts++;
+        this.stats.total++;
+        this.processedTweetIds.add(tweetId);
 
-    // Open caret dropdown
+        // Instantly remove from DOM to prevent layout thrashing and keep memory low
+        article.remove();
+
+        this.notify('item_deleted', {
+          type: itemType,
+          snippet,
+          stats: this.stats,
+          method: 'api'
+        });
+        return { success: true };
+      } else if (apiResult.rateLimited) {
+        return { rateLimited: true };
+      }
+      // If API failed due to non-429 (e.g. hash mismatch), fall back to DOM
+      console.warn('[XHit] API Delete failed, falling back to DOM automation:', apiResult.reason);
+    }
+
+    // --- FALLBACK PATH: Instant DOM Automation ---
+    if (!caretBtn) {
+      return { skipped: true, reason: 'Cannot delete via DOM (no caret button)' };
+    }
+
+    // Instant alignment (avoid smooth scroll stalling in background tabs)
+    article.scrollIntoView({ behavior: 'instant', block: 'center' });
+    await this.sleep(80);
+
     this.simulateClick(caretBtn);
 
-    // Wait for dropdown menu to appear in body/#layers
-    const dropdown = await this.waitForElement('[data-testid="Dropdown"], [role="menu"]', document, 2000);
+    const dropdown = await this.waitForElement('[data-testid="Dropdown"], [role="menu"]', document, 1500);
     if (!dropdown) {
       this.pressEscape();
       return { skipped: true, reason: 'Dropdown menu failed to open' };
     }
 
-    // Find "Delete" item inside dropdown
     const menuItems = Array.from(dropdown.querySelectorAll('[role="menuitem"], [data-testid="Dropdown"] > div'));
     let deleteItem = null;
 
@@ -394,122 +617,147 @@ class XHitEngine {
     }
 
     if (!deleteItem) {
-      // This is an ad, promoted post, or someone else's tweet
       this.pressEscape();
-      await this.sleep(200);
+      await this.sleep(100);
       return { skipped: true, reason: 'Not author post (no delete option)' };
     }
 
-    // Click "Delete" item
     this.simulateClick(deleteItem);
 
-    // Wait for confirmation dialog sheet
-    const confirmBtn = await this.waitForElement('[data-testid="confirmationSheetConfirm"]', document, 2500);
+    const confirmBtn = await this.waitForElement('[data-testid="confirmationSheetConfirm"]', document, 1800);
     if (!confirmBtn) {
       this.pressEscape();
       return { skipped: true, reason: 'Confirmation dialog not found' };
     }
 
-    // Confirm deletion
     this.simulateClick(confirmBtn);
+    await this.waitForRemoval(confirmBtn, 1200);
 
-    // Wait for dialog removal
-    await this.waitForRemoval(confirmBtn, 2000);
+    // Remove element immediately from DOM
+    article.remove();
+    if (tweetId) this.processedTweetIds.add(tweetId);
 
-    if (isReply) {
-      this.stats.replies++;
-    } else {
-      this.stats.posts++;
-    }
+    if (isReply) this.stats.replies++;
+    else this.stats.posts++;
     this.stats.total++;
 
     this.notify('item_deleted', {
       type: itemType,
       snippet,
-      stats: this.stats
+      stats: this.stats,
+      method: 'dom'
     });
 
     return { success: true };
   }
 
   // Handle Unretweet / Undo Repost
-  async handleUnretweet(article, unretweetBtn) {
-    const textEl = article.querySelector('[data-testid="tweetText"]');
-    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Reposted Tweet';
+  async handleUnretweet(article, unretweetBtn, tweetId, snippet) {
     this.notify('item_target', { type: 'Repost', snippet });
 
     if (this.options.dryRun) {
       this.highlightElement(article, '#3b82f6');
       this.stats.reposts++;
       this.stats.total++;
+      if (tweetId) this.processedTweetIds.add(tweetId);
       this.notify('item_deleted', { type: 'Repost', snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
 
-    article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await this.sleep(150);
+    // --- Fast Path: API Unretweet ---
+    if (this.useApi && tweetId) {
+      const apiResult = await this.apiDeleteRetweet(tweetId);
+      if (apiResult.success) {
+        this.stats.reposts++;
+        this.stats.total++;
+        this.processedTweetIds.add(tweetId);
+        article.remove();
+        this.notify('item_deleted', { type: 'Repost', snippet, stats: this.stats, method: 'api' });
+        return { success: true };
+      } else if (apiResult.rateLimited) {
+        return { rateLimited: true };
+      }
+    }
 
-    // Click unretweet button to show popover
+    // --- Fallback: DOM Unretweet ---
+    if (!unretweetBtn) return { skipped: true, reason: 'No unretweet button' };
+    article.scrollIntoView({ behavior: 'instant', block: 'center' });
+    await this.sleep(80);
+
     this.simulateClick(unretweetBtn);
-
-    // Wait for confirmation menu item
-    const confirmItem = await this.waitForElement('[data-testid="unretweetConfirm"]', document, 2000);
+    const confirmItem = await this.waitForElement('[data-testid="unretweetConfirm"]', document, 1500);
     if (!confirmItem) {
       this.pressEscape();
       return { skipped: true, reason: 'Undo repost confirm button not found' };
     }
 
-    // Click "Undo Repost"
     this.simulateClick(confirmItem);
-    await this.sleep(300);
+    await this.sleep(150);
+    article.remove();
+    if (tweetId) this.processedTweetIds.add(tweetId);
 
     this.stats.reposts++;
     this.stats.total++;
-    this.notify('item_deleted', { type: 'Repost', snippet, stats: this.stats });
-
+    this.notify('item_deleted', { type: 'Repost', snippet, stats: this.stats, method: 'dom' });
     return { success: true };
   }
 
   // Handle Unlike
-  async handleUnlike(article, unlikeBtn) {
-    const textEl = article.querySelector('[data-testid="tweetText"]');
-    const snippet = textEl ? textEl.textContent.trim().slice(0, 65) : 'Liked Tweet';
+  async handleUnlike(article, unlikeBtn, tweetId, snippet) {
     this.notify('item_target', { type: 'Like', snippet });
 
     if (this.options.dryRun) {
       this.highlightElement(article, '#ec4899');
       this.stats.likes++;
       this.stats.total++;
+      if (tweetId) this.processedTweetIds.add(tweetId);
       this.notify('item_deleted', { type: 'Like', snippet, dryRun: true });
       await this.sleep(this.getDelay());
       return { success: true };
     }
 
-    article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    await this.sleep(150);
+    // --- Fast Path: API Unlike ---
+    if (this.useApi && tweetId) {
+      const apiResult = await this.apiUnlike(tweetId);
+      if (apiResult.success) {
+        this.stats.likes++;
+        this.stats.total++;
+        this.processedTweetIds.add(tweetId);
+        article.remove();
+        this.notify('item_deleted', { type: 'Like', snippet, stats: this.stats, method: 'api' });
+        return { success: true };
+      } else if (apiResult.rateLimited) {
+        return { rateLimited: true };
+      }
+    }
 
-    // Click unlike button
+    // --- Fallback: DOM Unlike ---
+    if (!unlikeBtn) return { skipped: true, reason: 'No unlike button' };
+    article.scrollIntoView({ behavior: 'instant', block: 'center' });
+    await this.sleep(60);
+
     this.simulateClick(unlikeBtn);
-    await this.sleep(250);
+    await this.sleep(120);
+    article.remove();
+    if (tweetId) this.processedTweetIds.add(tweetId);
 
     this.stats.likes++;
     this.stats.total++;
-    this.notify('item_deleted', { type: 'Like', snippet, stats: this.stats });
-
+    this.notify('item_deleted', { type: 'Like', snippet, stats: this.stats, method: 'dom' });
     return { success: true };
   }
 
   // Visual highlight for dry-run
   highlightElement(el, color) {
     el.style.outline = `3px solid ${color}`;
-    el.style.transition = 'outline 0.3s ease';
+    el.style.transition = 'outline 0.2s ease';
     setTimeout(() => {
-      el.style.outline = '';
-    }, 1200);
+      if (el) el.style.outline = '';
+    }, 800);
   }
 
-  // Scroll down smoothly to load more items in virtual list
+  // Instant scroll to load more items in virtual list (works cleanly in background tabs)
   async scrollTimeline() {
     this.consecutiveEmptyScrolls++;
     if (this.consecutiveEmptyScrolls > this.maxEmptyScrolls) {
@@ -518,11 +766,12 @@ class XHitEngine {
 
     this.notify('scrolling', { attempt: this.consecutiveEmptyScrolls });
 
-    const scrollAmount = Math.floor(window.innerHeight * 0.85);
-    window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+    const scrollAmount = Math.floor(window.innerHeight * 0.9);
+    // Instant scroll to ensure background tabs trigger scroll events without requestAnimationFrame stalls
+    window.scrollBy({ top: scrollAmount, behavior: 'instant' });
 
-    // Wait for X to load new nodes
-    await this.sleep(1200 + this.getDelay());
+    // Wait for X to load new nodes (shortened from 1200ms+ to 500ms + jitter)
+    await this.sleep(500 + this.getDelay());
     return true;
   }
 
@@ -563,7 +812,7 @@ class XHitEngine {
       }
     }
 
-    // All selected stages completed!
+    // All selected stages completed
     return false;
   }
 }
